@@ -2,13 +2,24 @@
 
 iface_t cur_iface;
 
-static void add_ip(uint32_t ip)
+static void add_packet(uint32_t ip)
 {
-    FILE *test_file;
+    ipstat_t stat;
+    memstor_t *stor;
+    int32_t pos;
 
-    test_file = fopen("test.txt", "a");
-    fprintf(test_file, "%u %u.%u.%u.%u from %s\n", ip, (ip >> 24) & 0xFF, (ip >> 16) & 0xFF, (ip >> 8) & 0xFF, ip & 0xFF, cur_iface.dev_name);
-    fclose(test_file);
+    stor = get_from_memstor(ip);
+    if (stor != NULL) {
+        stor->stat.packet_count++;
+        update_file(stor->pos, &stor->stat);
+    }
+    else {
+        stat.ip_addr = ip;
+        stat.packet_count = 1;
+        strncpy(stat.iface, cur_iface.dev_name, IFNAMSIZ);
+        pos = write_to_file(&stat);
+        add_to_memstor((uint32_t)pos, &stat);
+    }
 }
 
 static void packet_handler(u_char *user_arg,
@@ -23,7 +34,7 @@ static void packet_handler(u_char *user_arg,
     if (htons(eth_header->h_proto) != ETH_P_IP)
         return ;
     ip_header = (struct iphdr *)(packet + sizeof(struct ethhdr));
-    add_ip(htonl(ip_header->saddr));
+    add_packet(htonl(ip_header->saddr));
 }
 
 void sniff_iface(void)

@@ -41,7 +41,26 @@ static void sniff_stop(int argc, char *argv[])
 
 static void sniff_show(int argc, char *argv[])
 {
+    uint8_t ip[4];
+    int read;
+    // const memstor_t *test;
+    // ipstat_t test1;
 
+    if (argc != 3 || strcmp(argv[2], "count")) {
+         fprintf(stderr, "Wrong syntax. See help message for more information.\n");
+         return ;
+    }
+    read = sscanf(argv[1], "%hhu.%hhu.%hhu.%hhu", &ip[0], &ip[1], &ip[2], &ip[3]);
+    if (read != 4) {
+        fprintf(stderr, "Wrong ip address format.\n");
+        return ;
+    }
+    // printf("%x\n", *((uint32_t *)ip));
+    // test = get_from_storage(*((uint32_t *)ip));
+    // if (test) {
+    //     ;
+        // printf("%zu", memstor_t->);
+    // }
 }
 
 static void sniff_select(int argc, char *argv[])
@@ -61,7 +80,15 @@ static void sniff_select(int argc, char *argv[])
 
 static void sniff_stat(int argc, char *argv[])
 {
-
+    if (argc > 2) {
+        fprintf(stderr, "Wrong syntax. See help message for more information.\n");
+        return ;
+    }
+    else if (argc == 2) {
+        ;
+    }
+    else
+        ;
 }
 
 static void sniff_help(int argc, char *argv[])

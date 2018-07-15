@@ -15,7 +15,7 @@ void prepare_daemon(void)
     pid_t sid;
 
     signal(SIGTERM, &term_handler);
-    // umask(S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+    umask(S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     sid = setsid();
     if (sid < 0) {
         remove(PID_FILE);
