@@ -57,7 +57,7 @@ static int print_ifacelist(memstor_t *ifacelist)
             ifacelist->stat.packet_count);
         tmp_p = ifacelist;
         ifacelist = ifacelist->next;
-        free(ifacelist);
+        free(tmp_p);
         count++;
     }
     return (count);
