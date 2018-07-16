@@ -1,5 +1,7 @@
 #include <sniffer.h>
 
+extern bool is_cli;
+
 static void sniff_start(int argc, char *argv[])
 {
     pid_t pid;
@@ -41,32 +43,29 @@ static void sniff_stop(int argc, char *argv[])
 
 static void sniff_show(int argc, char *argv[])
 {
-    uint8_t ip[4];
-    int read;
-    // const memstor_t *test;
-    // ipstat_t test1;
+    uint32_t ip;
 
     if (argc != 3 || strcmp(argv[2], "count")) {
          fprintf(stderr, "Wrong syntax. See help message for more information.\n");
          return ;
     }
-    read = sscanf(argv[1], "%hhu.%hhu.%hhu.%hhu", &ip[0], &ip[1], &ip[2], &ip[3]);
-    if (read != 4) {
+    ip = ipstrtoi(argv[1]);
+    if (ip == 0) {
         fprintf(stderr, "Wrong ip address format.\n");
         return ;
     }
-    // printf("%x\n", *((uint32_t *)ip));
-    // test = get_from_storage(*((uint32_t *)ip));
-    // if (test) {
-    //     ;
-        // printf("%zu", memstor_t->);
-    // }
+    if (!print_ipcount(ip))
+        printf("No statistics for ip %s was found.\n", itoipstr(&ip));
 }
 
 static void sniff_select(int argc, char *argv[])
 {
     int change;
 
+    if (is_cli == false) {
+        fprintf(stderr, "Command \"%s\" is not found.\n", argv[0]);
+        return ;
+    }
     if (argc != 3 || strcmp(argv[1], "iface")) {
          fprintf(stderr, "Wrong syntax. See help message for more information.\n");
          return ;
@@ -84,11 +83,18 @@ static void sniff_stat(int argc, char *argv[])
         fprintf(stderr, "Wrong syntax. See help message for more information.\n");
         return ;
     }
-    else if (argc == 2) {
-        ;
-    }
+    else if (argc == 2)
+        print_ifacestat(argv[1]);
     else
-        ;
+        print_allifacestat();
+}
+
+static void sniff_exit(int argc, char *argv[])
+{
+    if (is_cli == false)
+        fprintf(stderr, "Command \"%s\" is not found.\n", argv[0]);
+    free_memstor();
+    exit(EXIT_SUCCESS);
 }
 
 static void sniff_help(int argc, char *argv[])
@@ -97,21 +103,25 @@ static void sniff_help(int argc, char *argv[])
     printf("\tstart  - packets are being sniffed from now on from default iface\n");
     printf("\tstop   - packets are not sniffed\n");
     printf("\tshow [ip] count       - print number of packets received from ip address\n");
-    printf("\tselect iface [iface]  - select interface for sniffing\n");
+    if (is_cli == true)
+        printf("\tselect iface [iface]  - select interface for sniffing\n");
     printf("\tstat [iface]  - show all collected statistics for particular interface,\n");
     printf("\t                if ifaceomitted - for all interfaces.\n");
+    if (is_cli == true)
+        printf("\texit          - exit from cli\n");
     printf("\t--help        - show this message\n");
 }
 
 void select_command(int argc, char *argv[])
 {
-    const uint8_t com_count = 6;
+    const uint8_t com_count = 7;
     const char *command[] = {
         "start",
         "stop",
         "show",
         "select",
         "stat",
+        "exit",
         "--help"
     };
     const comfunc_t command_handler[] = {
@@ -120,7 +130,8 @@ void select_command(int argc, char *argv[])
         &sniff_show,
         &sniff_select,
         &sniff_stat,
-        &sniff_help,
+        &sniff_exit,
+        &sniff_help
     };
 
     for (int i = 0; i < com_count; i++) {

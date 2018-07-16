@@ -8,7 +8,7 @@ static void add_packet(uint32_t ip)
     memstor_t *stor;
     int32_t pos;
 
-    stor = get_from_memstor(ip);
+    stor = (memstor_t *)get_from_memstor(ip, cur_iface.dev_name);
     if (stor != NULL) {
         stor->stat.packet_count++;
         update_file(stor->pos, &stor->stat);
@@ -85,6 +85,6 @@ int set_iface(char *dev)
         return (-1);
     }
     cur_iface.pcap_handler = tmp_handler;
-    cur_iface.dev_name = dev;
+    strncpy(cur_iface.dev_name, dev, IFNAMSIZ);
     return (0);
 }

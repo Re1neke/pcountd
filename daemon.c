@@ -6,6 +6,7 @@ static void term_handler(int signum)
         pcap_breakloop(cur_iface.pcap_handler);
         pcap_close(cur_iface.pcap_handler);
     }
+    free_memstor();
     remove(PID_FILE);
     exit(EXIT_SUCCESS);
 }
