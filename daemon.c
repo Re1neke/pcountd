@@ -7,7 +7,7 @@ static void term_handler(int signum)
         pcap_close(cur_iface.pcap_handler);
     }
     free_memstor();
-    remove(PID_FILE);
+    remove_files();
     exit(EXIT_SUCCESS);
 }
 
@@ -19,16 +19,22 @@ void prepare_daemon(void)
     umask(S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     sid = setsid();
     if (sid < 0) {
-        remove(PID_FILE);
+        remove_files();
         exit(EXIT_FAILURE);
     }
     if ((chdir("/")) < 0) {
-        remove(PID_FILE);
+        remove_files();
         exit(EXIT_FAILURE);
     }
     close(STDIN_FILENO);
     close(STDOUT_FILENO);
     close(STDERR_FILENO);
+}
+
+void remove_files(void)
+{
+    remove(PID_FILE);
+    remove(RUN_DIR);
 }
 
 int create_pidfile(pid_t pid)
@@ -37,6 +43,8 @@ int create_pidfile(pid_t pid)
 
     if (access(PID_FILE, F_OK) != -1)
         return (1);
+    if (mkdir(RUN_DIR, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH) == -1)
+        return (-1);
     pid_file = fopen(PID_FILE, "w");
     if (pid_file == NULL)
         return (-1);

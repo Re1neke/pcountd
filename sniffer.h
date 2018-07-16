@@ -22,15 +22,22 @@
 # include <linux/ip.h>
 # include <arpa/inet.h>
 
-# define PID_FILE "/var/run/pcountd.pid"
-# define STORAGE_FILE "/var/lib/pcountd_storage.bin"
+# define RUN_DIR "/var/run/pcountd"
+# define PID_FILE RUN_DIR"/pcountd.pid"
+# define STORAGE_FILE "/var/lib/pcountd.storage"
 
 typedef void (*comfunc_t)(int argc, char *argv[]);
+
+typedef struct {
+    char *name;
+    comfunc_t func;
+} command_t;
 
 void select_command(int argc, char *argv[]);
 void run_cli(void);
 
 
+void remove_files(void);
 pid_t read_pidfile(void);
 int create_pidfile(pid_t pid);
 void prepare_daemon(void);

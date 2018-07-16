@@ -1,5 +1,7 @@
 #include <sniffer.h>
 
+bool is_cli = false;
+
 static int count_tokens(char *str)
 {
     int count = 0;
@@ -39,6 +41,7 @@ void run_cli(void)
     int argc;
     size_t buflen;
 
+    is_cli = true;
     if (read_pidfile() > 0)
         printf("The daemon is running now.\n");
     else

@@ -23,7 +23,7 @@ static void sniff_start(int argc, char *argv[])
     if (create_pidfile(getpid()))
         exit(EXIT_FAILURE);
     sniff_iface();
-    remove(PID_FILE);
+    remove_files();
 }
 
 static void sniff_stop(int argc, char *argv[])
@@ -114,29 +114,20 @@ static void sniff_help(int argc, char *argv[])
 
 void select_command(int argc, char *argv[])
 {
-    const uint8_t com_count = 7;
-    const char *command[] = {
-        "start",
-        "stop",
-        "show",
-        "select",
-        "stat",
-        "exit",
-        "--help"
+    const command_t command[] = {
+        {"start", &sniff_start},
+        {"stop", &sniff_stop},
+        {"show", &sniff_show},
+        {"select", &sniff_select},
+        {"stat", &sniff_stat},
+        {"exit", &sniff_exit},
+        {"--help", &sniff_help}
     };
-    const comfunc_t command_handler[] = {
-        &sniff_start,
-        &sniff_stop,
-        &sniff_show,
-        &sniff_select,
-        &sniff_stat,
-        &sniff_exit,
-        &sniff_help
-    };
+    const uint8_t com_count = sizeof(command) / sizeof(command_t);
 
     for (int i = 0; i < com_count; i++) {
-        if (!strcmp(command[i], argv[0])) {
-            command_handler[i](argc, &argv[0]);
+        if (!strcmp(command[i].name, argv[0])) {
+            command[i].func(argc, &argv[0]);
             return ;
         }
     }
