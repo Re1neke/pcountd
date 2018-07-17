@@ -4,7 +4,7 @@ memstor_t **storage = NULL;
 uint32_t stor_size = 0;
 uint32_t stor_full = 0;
 
-memstor_t **new_memstor(void)
+memstor_t **new_memstor(size_t size)
 {
     memstor_t **new_stor;
 
@@ -168,10 +168,12 @@ static int push_to_ifacelist(if_list_t **if_list, const memstor_t *pushd_stat)
         return ((*if_list == NULL) ? -1 : 0);
     }
     tmp_list = *if_list;
-    while (tmp_list->next != NULL) {
+    while (tmp_list != NULL) {
         if (!strcmp(tmp_list->list->stat.iface, pushd_stat->stat.iface)) {
             return (add_chain(&tmp_list->list, pushd_stat->pos, &pushd_stat->stat));
         }
+        if (tmp_list->next == NULL)
+            break ;
         tmp_list = tmp_list->next;
     }
     tmp_list->next = new_iface_stat(pushd_stat);
@@ -291,4 +293,15 @@ int file_to_memory(void)
     }
     fclose(stor_file);
     return (0);
+}
+
+int reload_file(void)
+{
+    uint32_t cur_size;
+
+    cur_size = stor_size;
+    free_memstor();
+    if (new_memstor(cur_size) == NULL)
+        return (-1);
+    return (file_to_memory());
 }

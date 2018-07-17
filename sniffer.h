@@ -76,7 +76,7 @@ typedef struct if_list_s {
     struct if_list_s *next;
 } if_list_t;
 
-memstor_t **new_memstor(void);
+memstor_t **new_memstor(size_t size);
 memstor_t **expand_memstor(void);
 void free_memstor(void);
 void free_memstorchain(memstor_t *chain);
@@ -88,6 +88,7 @@ const memstor_t *get_from_memstor(uint32_t ip_addr, char *dev);
 int32_t write_to_file(ipstat_t *stat);
 int update_file(uint32_t file_pos, const ipstat_t *stat);
 int file_to_memory(void);
+int reload_file(void);
 
 
 char *itoipstr(const uint32_t *ip);

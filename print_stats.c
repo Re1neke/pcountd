@@ -1,5 +1,7 @@
 #include <sniffer.h>
 
+extern bool is_cli;
+
 char *itoipstr(const uint32_t *ip)
 {
     static char ipstr[16];
@@ -31,6 +33,8 @@ int print_ipcount(uint32_t ip)
     size_t total = 0;
     int count = 0; 
 
+    if (read_pidfile() > 0 && is_cli == true)
+        reload_file();
     ipstat = get_ip_from_memstor(ip);
     if (ipstat == NULL)
         return (0);
@@ -68,6 +72,8 @@ int print_ifacestat(char *iface_name)
     memstor_t *ifacelist;
     int count;
 
+    if (read_pidfile() > 0 && is_cli == true)
+        reload_file();
     if (iface_name == NULL)
         return (-1);
     ifacelist = get_iface_from_memstor(iface_name);
@@ -81,6 +87,8 @@ int print_allifacestat(void)
 {
     if_list_t *ifaces, *tmp_p;
 
+    if (read_pidfile() > 0 && is_cli == true)
+        reload_file();
     ifaces = get_iface_sorted_list();
     if (ifaces == NULL) {
         printf("No statistics was found.\n");

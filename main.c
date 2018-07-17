@@ -7,7 +7,7 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
     set_iface(NULL);
-    new_memstor();
+    new_memstor(DEFAULT_STORAGE);
     file_to_memory();
     if (argc == 1)
         run_cli();
