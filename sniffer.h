@@ -65,8 +65,14 @@ typedef struct {
     size_t packet_count;
 } ipstat_t;
 
+typedef struct statlist_s {
+    ipstat_t stat;
+    uint32_t pos;
+    struct statlist_s *next;
+} statlist_t;
+
 typedef struct stortree_s {
-    storinfo_t *stats;
+    statlist_t *stats;
     uint32_t pos;
     bool is_black;
     struct stortree_s *parent;
@@ -74,18 +80,26 @@ typedef struct stortree_s {
     struct stortree_s *right;
 } stortree_t;
 
-typedef struct statlist_s {
-    ipstat_t stat;
-    struct statlist_s *next;
-} statlist_t;
 
-stortree_t *add_to_storage(ipstat_t *stat, uint32_t file_pos);
-stortree_t *get_first_node(uint32_t ip_addr);
-stortree_t *get_stor_node(uint32_t ip_addr, char *dev);
+stortree_t *add_node_to_storage(ipstat_t *stat, uint32_t file_pos);
+stortree_t *get_stor_node(uint32_t ip_addr);
 void free_storage(void);
 
-int get_ip_stat(uint32_t ip_addr, statlist_t **list);
+statlist_t *copy_stat(statlist_t *chain);
+statlist_t *append_to_statlist(statlist_t **head, ipstat_t *stat, uint32_t pos);
+statlist_t *get_if_stat(statlist_t *statlist, char *dev);
+uint32_t get_ip_stat(uint32_t ip_addr, statlist_t **list);
 void free_statlist(statlist_t **list);
+
+
+typedef struct if_list_s {
+    statlist_t *stats;
+    int32_t count;
+    struct if_list_s *next;
+} if_list_t;
+
+uint32_t get_iface_stat(char *dev, if_list_t **list);
+void free_iflist(if_list_t **iflist);
 
 
 int32_t write_to_file(ipstat_t *stat);
@@ -96,7 +110,6 @@ int file_to_memory(void);
 char *itoipstr(const uint32_t *ip);
 uint32_t ipstrtoi(const char *ipstr);
 void print_ipcount(statlist_t *ip_list);
-// int print_ifacestat(char *iface_name);
-// int print_allifacestat(void);
+void print_ifacestat(if_list_t *if_list);
 
 #endif

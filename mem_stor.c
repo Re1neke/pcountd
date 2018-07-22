@@ -9,8 +9,11 @@ static stortree_t *new_node(ipstat_t *ipstat, uint32_t pos)
     node = (stortree_t *)malloc(sizeof(stortree_t));
     if (node == NULL)
         return (NULL);
-    node->stat = *ipstat;
-    node->pos = pos;
+    node->stats = NULL;
+    if (append_to_statlist(&node->stats, ipstat, pos) == NULL) {
+        free(node);
+        return (NULL);
+    }
     node->is_black = false;
     node->parent = NULL;
     node->left = NULL;
@@ -23,22 +26,14 @@ static stortree_t *push_node(stortree_t *root, stortree_t *node)
     if (root == NULL) {
         return (node);
     }
-    if (root->stat.ip_addr > node->stat.ip_addr) {
+    if (root->stats->stat.ip_addr > node->stats->stat.ip_addr) {
         root->left = push_node(root->left, node);
         root->left->parent = root;
     }
-    else if (root->stat.ip_addr < node->stat.ip_addr) {
+    else if (root->stats->stat.ip_addr < node->stats->stat.ip_addr) {
         root->right = push_node(root->right, node);
         root->right->parent = root;
     }
-    // else if (strcmp(root->stat.iface, node->stat.iface) <= 0) {
-    //     root->right = push_node(root->right, node);
-    //     root->right->parent = root;
-    // }
-    // else if (strcmp(root->stat.iface, node->stat.iface) > 0) {
-    //     root->left = push_node(root->left, node);
-    //     root->left->parent = root;
-    // }
     return (root);
 }
 
@@ -139,7 +134,7 @@ static void balance_tree(stortree_t **root, stortree_t *node)
         rotate_left(root, gparent);
 }
 
-stortree_t *add_to_storage(ipstat_t *stat, uint32_t file_pos)
+stortree_t *add_node_to_storage(ipstat_t *stat, uint32_t file_pos)
 {
     stortree_t *node;
 
@@ -151,36 +146,18 @@ stortree_t *add_to_storage(ipstat_t *stat, uint32_t file_pos)
     return (node);
 }
 
-stortree_t *get_first_node(uint32_t ip_addr)
+stortree_t *get_stor_node(uint32_t ip_addr)
 {
     stortree_t *cursor;
 
     cursor = storage;
     while (cursor != NULL) {
-        if (cursor->stat.ip_addr == ip_addr)
+        if (cursor->stats->stat.ip_addr == ip_addr)
             return (cursor);
-        if (cursor->stat.ip_addr > ip_addr)
+        if (cursor->stats->stat.ip_addr > ip_addr)
             cursor = cursor->left;
         else
             cursor = cursor->right;
-    }
-    return (NULL);
-}
-
-stortree_t *get_stor_node(uint32_t ip_addr, char *dev)
-{
-    stortree_t *cursor;
-    int cmp;
-
-    cursor = get_first_node(ip_addr);
-    while (cursor != NULL) {
-        cmp = strcmp(cursor->stat.iface, dev);
-        if (cmp == 0)
-            return (cursor);
-        if (cmp < 0)
-            cursor = cursor->left;
-        else
-            cursor = cursor->right; 
     }
     return (NULL);
 }
@@ -192,6 +169,20 @@ static void stortree_map(stortree_t *root, void (*map_func)(stortree_t *))
     stortree_map(root->left, map_func);
     stortree_map(root->right, map_func);
     map_func(root);
+}
+
+static void free_node(stortree_t *node)
+{
+    if (node == NULL)
+        return ;
+    free_statlist(&node->stats);
+    free(node);
+}
+
+void free_storage(void)
+{
+    stortree_map(storage, &free_node);
+    storage = NULL;
 }
 
 /*
@@ -213,128 +204,3 @@ void print_tree(void)
     stortree_map(storage, print_node);
 }
 */
-
-static void free_node(stortree_t *node)
-{
-    if (node == NULL)
-        return ;
-    free(node);
-}
-
-void free_storage(void)
-{
-    stortree_map(storage, &free_node);
-    storage = NULL;
-}
-
-// if_list_t *get_iface_sorted_list(void)
-// {
-//     if_list_t *iface_list = NULL;
-//     const memstor_t *cur_stor;
-
-//     for (int i = 0; i < stor_full; i++) {
-//         cur_stor = storage[i];
-//         while (cur_stor != NULL) {
-//             push_to_ifacelist(&iface_list, cur_stor);
-//             cur_stor = cur_stor->next;
-//         }
-//     }
-//     return (iface_list);
-// } 
-
-// memstor_t *get_iface_from_memstor(char *dev)
-// {
-//     memstor_t *iface_list, *list_tail, *new_chain;
-//     const memstor_t *cur_iface;
-
-//     iface_list = list_tail = NULL;
-//     for (int i = 0; i < stor_full; i++) {
-//         cur_iface = get_iface_from_chain(storage[i], dev);
-//         if (cur_iface == NULL)
-//             continue ;
-//         new_chain = create_chain(cur_iface->pos, &cur_iface->stat);
-//         if (new_chain == NULL) {
-//             free_memstorchain(iface_list);
-//             return (NULL);
-//         }
-//         if (iface_list == NULL || list_tail == NULL)
-//             iface_list = list_tail = new_chain;
-//         else {
-//             list_tail->next = new_chain;
-//             list_tail = list_tail->next;
-//         }
-//     }
-//     return (iface_list);
-// }
-
-static statlist_t *new_chain(ipstat_t *stat)
-{
-    statlist_t *new;
-
-    new = (statlist_t *)malloc(sizeof(statlist_t));
-    if (new == NULL)
-        return (NULL);
-    new->stat = *stat;
-    new->next = NULL;
-    return (new);
-}
-
-static statlist_t *push_to_statlist(statlist_t **head, statlist_t *chain)
-{
-    statlist_t *tmp;
-
-    if (*head == NULL) {
-        *head = chain;
-        return (chain);
-    }
-    tmp = *head;
-    while (tmp->next != NULL)
-        tmp = tmp->next;
-    tmp->next = chain;
-    return (chain);
-}
-
-static int add_next_same_ip(statlist_t **list,
-                                    stortree_t *root,
-                                    uint32_t ip_addr
-)
-{
-    statlist_t *chain;
-    int count;
-
-    chain = new_chain(&root->stat);
-    if (chain == NULL)
-        return (0);
-    push_to_statlist(list, chain);   
-    count = 1;
-    if (root->left != NULL && root->left->stat.ip_addr == ip_addr)
-        count += add_next_same_ip(&chain, root->left, ip_addr);
-    if (root->right != NULL && root->right->stat.ip_addr == ip_addr)
-        count += add_next_same_ip(&chain, root->right, ip_addr);
-    return (count);
-}
-
-int get_ip_stat(uint32_t ip_addr, statlist_t **list)
-{
-    statlist_t *chain;
-    stortree_t *first_node;
-    int count = 0;
-
-    first_node = get_first_node(ip_addr);
-    if (first_node != NULL)
-        count = add_next_same_ip(list, first_node, ip_addr);
-    return (count);
-}
-
-void free_statlist(statlist_t **list)
-{
-    statlist_t *chain, *tmp;
-
-    chain  = *list;
-    while (chain != NULL) {
-        tmp = chain;
-        chain = chain->next;
-        free(tmp);
-    }
-    *list = NULL;
-}

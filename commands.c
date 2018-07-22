@@ -53,15 +53,12 @@ static void sniff_stop(int argc, char *argv[])
 {
 
 }
-void print_tree(void);
+
 static void sniff_show(int argc, char *argv[])
 {
     uint32_t ip;
     statlist_t *ip_list = NULL;
-    int count;
 
-file_to_memory();
-// print_tree();
     if (argc != 3 || strcmp(argv[2], "count")) {
          fprintf(stderr, "Wrong syntax. See help message for more information.\n");
          return ;
@@ -97,21 +94,21 @@ static void sniff_select(int argc, char *argv[])
 
 static void sniff_stat(int argc, char *argv[])
 {
+    if_list_t *list = NULL;
+
     if (argc > 2) {
         fprintf(stderr, "Wrong syntax. See help message for more information.\n");
         return ;
     }
-    // else if (argc == 2)
-    //     print_ifacestat(argv[1]);
-    // else
-    //     print_allifacestat();
+    get_iface_stat((argc == 2) ? argv[1] : NULL, &list);
+    print_ifacestat(list);
+    free_iflist(&list);
 }
 
 static void sniff_exit(int argc, char *argv[])
 {
     if (is_cli == false)
         fprintf(stderr, "Command \"%s\" is not found.\n", argv[0]);
-    free_storage();
     exit(EXIT_SUCCESS);
 }
 

@@ -7,10 +7,11 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
     // set_iface(NULL);
-    // file_to_memory();
+    file_to_memory();
     if (argc == 1)
         run_cli();
     else
         select_command(argc - 1, &argv[1]);
     return (0);
+    free_storage();
 }

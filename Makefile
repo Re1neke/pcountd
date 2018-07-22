@@ -1,11 +1,11 @@
 CC=gcc
-# CFLAGS=-Wall -Werror -Wconversion
+CFLAGS=-Wall -Werror -Wconversion
 LIBFLAGS=-lpcap
 
 NAME=pcountd
 INC=sniffer.h
 SRC=main.c daemon.c cli.c sniffer.c file_stor.c print_stats.c commands.c\
-	mem_stor.c
+	mem_stor.c stat_list.c stat_list_if.c
 OBJ=$(SRC:.c=.o)
 
 all: $(NAME)

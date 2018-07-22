@@ -4,21 +4,29 @@ iface_t cur_iface;
 
 static void add_packet(uint32_t ip)
 {
-    ipstat_t stat;
-    stortree_t *stor;
+    ipstat_t tmp_stat;
+    stortree_t *stor_node;
+    statlist_t *stat_chain;
     int32_t pos;
 
-    stor = get_stor_node(ip, cur_iface.dev_name);
-    if (stor != NULL) {
-        stor->stat.packet_count++;
-        update_file(stor->pos, &stor->stat);
+    tmp_stat.ip_addr = ip;
+    tmp_stat.packet_count = 1;
+    strncpy(tmp_stat.iface, cur_iface.dev_name, IFNAMSIZ);
+    stor_node = get_stor_node(ip);
+    if (stor_node != NULL) {
+        stat_chain = get_if_stat(stor_node->stats, cur_iface.dev_name);
+        if (stat_chain != NULL) {
+            stat_chain->stat.packet_count++;
+            update_file(stat_chain->pos, &stat_chain->stat);
+        }
+        else {
+            pos = write_to_file(&tmp_stat);
+            append_to_statlist(&stor_node->stats, &tmp_stat, (uint32_t)pos);
+        }
     }
     else {
-        stat.ip_addr = ip;
-        stat.packet_count = 1;
-        strncpy(stat.iface, cur_iface.dev_name, IFNAMSIZ);
-        pos = write_to_file(&stat);
-        add_to_storage(&stat, (uint32_t)pos);
+        pos = write_to_file(&tmp_stat);
+        add_node_to_storage(&tmp_stat, (uint32_t)pos);
     }
 }
 
