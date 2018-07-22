@@ -53,7 +53,7 @@ void run_cli(void)
         getline(&line, &buflen, stdin);
         argv = strtoarr(line, &argc);
         if (argv != NULL) {
-            select_command(argc, argv);
+            // select_command(argc, argv);
             free(argv);
         }
         if (line != NULL)

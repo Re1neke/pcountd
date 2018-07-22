@@ -63,32 +63,31 @@ int change_iface(char *dev);
 int set_iface(char *dev);
 
 
-typedef struct memstor_s {
+typedef struct stortree_s {
     ipstat_t stat;
     uint32_t pos;
-    struct memstor_s *next;
-} memstor_t;
+    bool is_black;
+    struct stortree_s *parent;
+    struct stortree_s *left;
+    struct stortree_s *right;
+} stortree_t;
 
-#define DEFAULT_STORAGE ((uint32_t)64)
+// typedef struct if_list_s {
+//     memstor_t *list;
+//     struct if_list_s *next;
+// } if_list_t;
 
-typedef struct if_list_s {
-    memstor_t *list;
-    struct if_list_s *next;
-} if_list_t;
-
-memstor_t **new_memstor(size_t size);
-memstor_t **expand_memstor(void);
-void free_memstor(void);
-void free_memstorchain(memstor_t *chain);
-int add_to_memstor(uint32_t file_pos, ipstat_t *stat);
-const memstor_t *get_ip_from_memstor(uint32_t ip_addr);
-memstor_t *get_iface_from_memstor(char *dev);
-if_list_t *get_iface_sorted_list(void);
-const memstor_t *get_from_memstor(uint32_t ip_addr, char *dev);
+// memstor_t *get_iface_from_memstor(char *dev);
+// if_list_t *get_iface_sorted_list(void);
 int32_t write_to_file(ipstat_t *stat);
 int update_file(uint32_t file_pos, const ipstat_t *stat);
 int file_to_memory(void);
-int reload_file(void);
+
+
+stortree_t *add_to_storage(ipstat_t *stat, uint32_t file_pos);
+stortree_t *get_first_node(uint32_t ip_addr);
+stortree_t *get_stor_node(uint32_t ip_addr, char *dev);
+void free_storage(void);
 
 
 char *itoipstr(const uint32_t *ip);

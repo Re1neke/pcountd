@@ -5,10 +5,10 @@ iface_t cur_iface;
 static void add_packet(uint32_t ip)
 {
     ipstat_t stat;
-    memstor_t *stor;
+    stortree_t *stor;
     int32_t pos;
 
-    stor = (memstor_t *)get_from_memstor(ip, cur_iface.dev_name);
+    stor = get_stor_node(ip, cur_iface.dev_name);
     if (stor != NULL) {
         stor->stat.packet_count++;
         update_file(stor->pos, &stor->stat);
@@ -18,7 +18,7 @@ static void add_packet(uint32_t ip)
         stat.packet_count = 1;
         strncpy(stat.iface, cur_iface.dev_name, IFNAMSIZ);
         pos = write_to_file(&stat);
-        add_to_memstor((uint32_t)pos, &stat);
+        add_to_storage(&stat, (uint32_t)pos);
     }
 }
 

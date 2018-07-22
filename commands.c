@@ -54,8 +54,8 @@ static void sniff_show(int argc, char *argv[])
         fprintf(stderr, "Wrong ip address format.\n");
         return ;
     }
-    if (!print_ipcount(ip))
-        printf("No statistics for ip %s was found.\n", itoipstr(&ip));
+    // if (!print_ipcount(ip))
+    //     printf("No statistics for ip %s was found.\n", itoipstr(&ip));
 }
 
 static void sniff_select(int argc, char *argv[])
@@ -83,17 +83,17 @@ static void sniff_stat(int argc, char *argv[])
         fprintf(stderr, "Wrong syntax. See help message for more information.\n");
         return ;
     }
-    else if (argc == 2)
-        print_ifacestat(argv[1]);
-    else
-        print_allifacestat();
+    // else if (argc == 2)
+    //     print_ifacestat(argv[1]);
+    // else
+    //     print_allifacestat();
 }
 
 static void sniff_exit(int argc, char *argv[])
 {
     if (is_cli == false)
         fprintf(stderr, "Command \"%s\" is not found.\n", argv[0]);
-    free_memstor();
+    free_storage();
     exit(EXIT_SUCCESS);
 }
 
