@@ -2,6 +2,8 @@
 
 static void term_handler(int signum)
 {
+    extern iface_t cur_iface;
+
     if (cur_iface.pcap_handler != NULL) {
         pcap_breakloop(cur_iface.pcap_handler);
         pcap_close(cur_iface.pcap_handler);

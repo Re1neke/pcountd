@@ -2,7 +2,7 @@
 
 extern bool is_cli;
 
-static void sniff_start(int argc, char *argv[])
+static void sniff_run(int argc, char *argv[])
 {
     pid_t pid;
 
@@ -22,11 +22,14 @@ static void sniff_start(int argc, char *argv[])
     prepare_daemon();
     if (create_pidfile(getpid()))
         exit(EXIT_FAILURE);
-    sniff_iface();
+    set_iface(NULL);
+    file_to_memory();
+    // sniff_iface();
     remove_files();
+    exit(EXIT_FAILURE);
 }
 
-static void sniff_stop(int argc, char *argv[])
+static void sniff_halt(int argc, char *argv[])
 {
     pid_t pid;
 
@@ -41,10 +44,24 @@ static void sniff_stop(int argc, char *argv[])
         printf("The daemon is successfuly stoped.\n");
 }
 
+static void sniff_start(int argc, char *argv[])
+{
+
+}
+
+static void sniff_stop(int argc, char *argv[])
+{
+
+}
+void print_tree(void);
 static void sniff_show(int argc, char *argv[])
 {
     uint32_t ip;
+    statlist_t *ip_list = NULL;
+    int count;
 
+file_to_memory();
+// print_tree();
     if (argc != 3 || strcmp(argv[2], "count")) {
          fprintf(stderr, "Wrong syntax. See help message for more information.\n");
          return ;
@@ -54,8 +71,9 @@ static void sniff_show(int argc, char *argv[])
         fprintf(stderr, "Wrong ip address format.\n");
         return ;
     }
-    // if (!print_ipcount(ip))
-    //     printf("No statistics for ip %s was found.\n", itoipstr(&ip));
+    get_ip_stat(ip, &ip_list);
+    print_ipcount(ip_list);
+    free_statlist(&ip_list);
 }
 
 static void sniff_select(int argc, char *argv[])
@@ -100,12 +118,14 @@ static void sniff_exit(int argc, char *argv[])
 static void sniff_help(int argc, char *argv[])
 {
     printf("Supported commands:\n");
+    printf("\trun    - sniffing daemon is started and waits for next commands\n");
+    printf("\thalt   - kill the daemon process\n");
     printf("\tstart  - packets are being sniffed from now on from default iface\n");
     printf("\tstop   - packets are not sniffed\n");
-    printf("\tshow [ip] count       - print number of packets received from ip address\n");
+    printf("\t#show [ip] count       - print number of packets received from ip address\n");
     if (is_cli == true)
-        printf("\tselect iface [iface]  - select interface for sniffing\n");
-    printf("\tstat [iface]  - show all collected statistics for particular interface,\n");
+        printf("\t#select iface [iface]  - select interface for sniffing\n");
+    printf("\t#stat [iface]  - show all collected statistics for particular interface,\n");
     printf("\t                if ifaceomitted - for all interfaces.\n");
     if (is_cli == true)
         printf("\texit          - exit from cli\n");
@@ -115,6 +135,8 @@ static void sniff_help(int argc, char *argv[])
 void select_command(int argc, char *argv[])
 {
     const command_t command[] = {
+        {"run", &sniff_run},
+        {"halt", &sniff_halt},
         {"start", &sniff_start},
         {"stop", &sniff_stop},
         {"show", &sniff_show},

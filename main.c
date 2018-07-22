@@ -6,8 +6,8 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Must be root for correct working.\n");
         exit(EXIT_FAILURE);
     }
-    set_iface(NULL);
-    file_to_memory();
+    // set_iface(NULL);
+    // file_to_memory();
     if (argc == 1)
         run_cli();
     else

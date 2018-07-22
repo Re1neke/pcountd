@@ -27,6 +27,25 @@ uint32_t ipstrtoi(const char *ipstr)
     return (ip);
 }
 
+
+void print_ipcount(statlist_t *ip_list)
+{
+    size_t total = 0;
+
+    if (ip_list == NULL) {
+        printf("No statistics for this ip was found.\n");
+        return ;
+    }
+    printf("Statistics of incoming packets from %s:\n",
+            itoipstr(&ip_list->stat.ip_addr));
+    while (ip_list != NULL) {
+        printf("\t%8s: %zu\n", ip_list->stat.iface, ip_list->stat.packet_count);
+        total += ip_list->stat.packet_count;
+        ip_list = ip_list->next;
+    }
+    printf("Total: %zu\n", total);
+}
+
 // int print_ipcount(uint32_t ip)
 // {
 //     const memstor_t *ipstat;
