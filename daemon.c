@@ -18,6 +18,7 @@ void prepare_daemon(void)
     pid_t sid;
 
     signal(SIGTERM, &term_handler);
+    signal(SIGINT, &term_handler);
     umask(S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     sid = setsid();
     if (sid < 0) {
@@ -35,6 +36,7 @@ void prepare_daemon(void)
 
 void remove_files(void)
 {
+    remove(SOCK_FILE);
     remove(PID_FILE);
     remove(RUN_DIR);
 }
@@ -45,6 +47,7 @@ int create_pidfile(pid_t pid)
 
     if (access(PID_FILE, F_OK) != -1)
         return (1);
+    remove_files();
     if (mkdir(RUN_DIR, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH) == -1)
         return (-1);
     pid_file = fopen(PID_FILE, "w");

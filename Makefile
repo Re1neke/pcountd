@@ -5,7 +5,7 @@ LIBFLAGS=-lpcap
 NAME=pcountd
 INC=sniffer.h
 SRC=main.c daemon.c cli.c sniffer.c file_stor.c print_stats.c commands.c\
-	mem_stor.c stat_list.c stat_list_if.c
+	mem_stor.c stat_list.c stat_list_if.c socket.c
 OBJ=$(SRC:.c=.o)
 
 all: $(NAME)

@@ -5,7 +5,7 @@ static if_list_t *new_iflist(statlist_t *stat)
     if_list_t *new_list;
     statlist_t *copy;
 
-    new_list = (if_list_t *)malloc(sizeof(if_list_t));
+    new_list = new_empty_iflist();
     if (new_list == NULL)
         return (NULL);
     copy = copy_stat(stat);
@@ -15,11 +15,38 @@ static if_list_t *new_iflist(statlist_t *stat)
     }
     new_list->stats = copy;
     new_list->count = 1;
+    return (new_list);
+}
+
+if_list_t *new_empty_iflist(void)
+{
+    if_list_t *new_list;
+
+    new_list = (if_list_t *)malloc(sizeof(if_list_t));
+    if (new_list == NULL)
+        return (NULL);
+    new_list->stats = NULL;
+    new_list->count = 0;
     new_list->next = NULL;
     return (new_list);
 }
 
-static uint32_t push_to_iflist(if_list_t **list, statlist_t *stat)
+if_list_t *push_to_iflist(if_list_t **list, if_list_t *chain)
+{
+    if_list_t *tmp_cur;
+
+    if (*list == NULL) {
+        *list = chain;
+        return (chain);
+    }
+    tmp_cur = *list;
+    while (tmp_cur->next != NULL)
+        tmp_cur = tmp_cur->next;
+    tmp_cur->next = chain;
+    return (chain);
+}
+
+static uint32_t push_stat_to_iflist(if_list_t **list, statlist_t *stat)
 {
     if_list_t *cur;
 
@@ -52,18 +79,18 @@ static uint32_t add_iface(if_list_t **list, statlist_t *stats, char *dev)
     if (dev != NULL) {
         ifstat = get_if_stat(stats, dev);
         if (ifstat != NULL)
-            count += push_to_iflist(list, ifstat);
+            count += push_stat_to_iflist(list, ifstat);
     }
     else {
         while (stats != NULL) {
-            count += push_to_iflist(list, stats);
+            count += push_stat_to_iflist(list, stats);
             stats = stats->next;
         }
     }
     return (count);
 }
 
-uint32_t collect_iface_stat(stortree_t *root, if_list_t **list, char *dev)
+static uint32_t collect_iface_stat(stortree_t *root, if_list_t **list, char *dev)
 {
     uint32_t count = 0;
 

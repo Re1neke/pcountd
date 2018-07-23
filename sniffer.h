@@ -94,10 +94,12 @@ void free_statlist(statlist_t **list);
 
 typedef struct if_list_s {
     statlist_t *stats;
-    int32_t count;
+    uint32_t count;
     struct if_list_s *next;
 } if_list_t;
 
+if_list_t *new_empty_iflist(void);
+if_list_t *push_to_iflist(if_list_t **list, if_list_t *chain);
 uint32_t get_iface_stat(char *dev, if_list_t **list);
 void free_iflist(if_list_t **iflist);
 
@@ -111,5 +113,26 @@ char *itoipstr(const uint32_t *ip);
 uint32_t ipstrtoi(const char *ipstr);
 void print_ipcount(statlist_t *ip_list);
 void print_ifacestat(if_list_t *if_list);
+
+
+typedef enum {
+    START,
+    STOP,
+    SHOW_CNT,
+    SELECT,
+    STAT,
+    STAT_ALL
+} com_id_t;
+
+typedef void (*scomfunc_t)(int sock, uint8_t com_id);
+
+typedef struct {
+    com_id_t com_id;
+    scomfunc_t func;
+} scommand_t;
+
+int create_ssocket(void);
+void start_listen(int ssock_fd);
+int open_cli_sock(void);
 
 #endif

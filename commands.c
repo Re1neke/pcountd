@@ -5,6 +5,7 @@ extern bool is_cli;
 static void sniff_run(int argc, char *argv[])
 {
     pid_t pid;
+    int ssock_fd;
 
     if (read_pidfile() > 0) {
         fprintf(stderr, "The daemon is already running. Error.\n");
@@ -23,8 +24,13 @@ static void sniff_run(int argc, char *argv[])
     if (create_pidfile(getpid()))
         exit(EXIT_FAILURE);
     set_iface(NULL);
+    ssock_fd = create_ssocket();
+    if (ssock_fd < 0) {
+        remove_files();
+        exit(EXIT_FAILURE);
+    }
     file_to_memory();
-    // sniff_iface();
+    start_listen(ssock_fd);
     remove_files();
     exit(EXIT_FAILURE);
 }
@@ -56,8 +62,11 @@ static void sniff_stop(int argc, char *argv[])
 
 static void sniff_show(int argc, char *argv[])
 {
-    uint32_t ip;
+    uint32_t ip, count;
     statlist_t *ip_list = NULL;
+    ipstat_t tmp_stat;
+    const uint8_t com_id = (uint8_t)SHOW_CNT;
+    int sock;
 
     if (argc != 3 || strcmp(argv[2], "count")) {
          fprintf(stderr, "Wrong syntax. See help message for more information.\n");
@@ -68,39 +77,80 @@ static void sniff_show(int argc, char *argv[])
         fprintf(stderr, "Wrong ip address format.\n");
         return ;
     }
-    get_ip_stat(ip, &ip_list);
+    sock = open_cli_sock();
+    if (sock < 0) {
+        fprintf(stderr, "Can not connect to daemon. Error.\n");
+        return ;      
+    }
+    send(sock, (void *)&com_id, sizeof(uint8_t), 0);
+    send(sock, (void *)&ip, sizeof(uint32_t), 0);
+    recv(sock, (void *)&count, sizeof(uint32_t), 0);
+    for (uint32_t i = 0; i < count; i++) {
+        memset(&tmp_stat, 0, sizeof(ipstat_t));
+        recv(sock, (void *)&tmp_stat, sizeof(ipstat_t), 0);
+        append_to_statlist(&ip_list, &tmp_stat, 0);
+    }
     print_ipcount(ip_list);
     free_statlist(&ip_list);
 }
 
 static void sniff_select(int argc, char *argv[])
 {
-    int change;
+    int sock;
+    int8_t change;
+    const uint8_t com_id = (uint8_t)SELECT;
 
-    if (is_cli == false) {
-        fprintf(stderr, "Command \"%s\" is not found.\n", argv[0]);
+    if (argc != 3 || strcmp(argv[1], "iface")) {
+        fprintf(stderr, "Wrong syntax. See help message for more information.\n");
         return ;
     }
-    if (argc != 3 || strcmp(argv[1], "iface")) {
-         fprintf(stderr, "Wrong syntax. See help message for more information.\n");
-         return ;
-    }
-    change = change_iface(argv[2]);
+    sock = open_cli_sock();
+    if (sock < 0) {
+        fprintf(stderr, "Can not connect to daemon. Error.\n");
+        return ;      
+    } 
+    send(sock, (void *)&com_id, sizeof(uint8_t), 0);
+    send(sock, (void *)argv[2], IFNAMSIZ, 0);
+    recv(sock, (void *)&change, sizeof(int8_t), 0);
     if (change == 0)
-        printf("Device successfuly changed. Restart daemon for start sniffing.\n");
+        printf("Device successfuly changed. Restart sniffer for start sniffing.\n");
     else if (change == 1)
         fprintf(stderr, "Wrong device name.\n");
 }
 
 static void sniff_stat(int argc, char *argv[])
 {
-    if_list_t *list = NULL;
+    uint32_t if_count;
+    if_list_t *list = NULL, *cur_if;
+    ipstat_t tmp_stat;
+    const uint8_t com_id = (argc == 2) ? (uint8_t)STAT : (uint8_t)STAT_ALL;
+    int sock;
 
     if (argc > 2) {
         fprintf(stderr, "Wrong syntax. See help message for more information.\n");
         return ;
     }
-    get_iface_stat((argc == 2) ? argv[1] : NULL, &list);
+    sock = open_cli_sock();
+    send(sock, (void *)&com_id, sizeof(uint8_t), 0);
+    if (sock < 0) {
+        fprintf(stderr, "Can not connect to daemon. Error.\n");
+        return ;      
+    }
+    if (argc == 2)
+        send(sock, (void *)argv[1], IFNAMSIZ, 0);
+    recv(sock, (void *)&if_count, sizeof(uint32_t), 0);
+    for (uint32_t i = 0; i < if_count; i++) {
+        cur_if = new_empty_iflist();
+        if (cur_if == NULL)
+            break ;
+        recv(sock, (void *)&cur_if->count, sizeof(uint32_t), 0);
+        for (uint32_t j = 0; j < cur_if->count; j++) {
+            memset(&tmp_stat, 0, sizeof(ipstat_t));
+            recv(sock, (void *)&tmp_stat, sizeof(ipstat_t), 0);
+            append_to_statlist(&cur_if->stats, &tmp_stat, 0);
+        }
+        push_to_iflist(&list, cur_if);
+    }
     print_ifacestat(list);
     free_iflist(&list);
 }
@@ -120,7 +170,6 @@ static void sniff_help(int argc, char *argv[])
     printf("\tstart  - packets are being sniffed from now on from default iface\n");
     printf("\tstop   - packets are not sniffed\n");
     printf("\t#show [ip] count       - print number of packets received from ip address\n");
-    if (is_cli == true)
         printf("\t#select iface [iface]  - select interface for sniffing\n");
     printf("\t#stat [iface]  - show all collected statistics for particular interface,\n");
     printf("\t                if ifaceomitted - for all interfaces.\n");
@@ -144,7 +193,7 @@ void select_command(int argc, char *argv[])
     };
     const uint8_t com_count = sizeof(command) / sizeof(command_t);
 
-    for (int i = 0; i < com_count; i++) {
+    for (uint8_t i = 0; i < com_count; i++) {
         if (!strcmp(command[i].name, argv[0])) {
             command[i].func(argc, &argv[0]);
             return ;
