@@ -16,7 +16,7 @@ static void add_packet(uint32_t ip)
     strncpy(tmp_stat.iface, cur_iface.dev_name, IFNAMSIZ);
     stor_node = get_stor_node(ip);
     if (stor_node != NULL) {
-        stat_chain = get_if_stat(stor_node->stats, cur_iface.dev_name);
+        stat_chain = get_iface(stor_node->stats, cur_iface.dev_name);
         if (stat_chain != NULL) {
             stat_chain->stat.packet_count++;
             update_file(stat_chain->pos, &stat_chain->stat);
@@ -89,10 +89,10 @@ int set_iface(void)
     char errbuf[PCAP_ERRBUF_SIZE];
     char *dev;
 
-    if (strlen(next_dev) <= 0)
-        dev = pcap_lookupdev(errbuf);
-    else
+    if (strlen(next_dev) > 0)
         dev = next_dev;
+    else
+        dev = pcap_lookupdev(errbuf);
     if (dev == NULL)
         return (-1);
     tmp_handler = pcap_create(dev, errbuf);

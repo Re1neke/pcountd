@@ -184,23 +184,3 @@ void free_storage(void)
     stortree_map(storage, &free_node);
     storage = NULL;
 }
-
-/*
-static void print_node(stortree_t *node)
-{
-    char ipstr[16];
-    strncpy(ipstr, itoipstr(&node->stat.ip_addr), 16);
-    printf("[%16s](%8s)\t%p\tleft->%12p;\tright->%12p;\tparent->%12p\n",
-            ipstr,
-            node->stat.iface,
-            node,
-            node->left,
-            node->right,
-            node->parent);
-}
-
-void print_tree(void)
-{
-    stortree_map(storage, print_node);
-}
-*/

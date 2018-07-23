@@ -47,7 +47,7 @@ void run_cli(void);
 void remove_files(void);
 pid_t read_pidfile(void);
 int create_pidfile(pid_t pid);
-void prepare_daemon(void);
+int prepare_daemon(void);
 void start_daemon(void);
 
 
@@ -92,7 +92,7 @@ void free_storage(void);
 
 statlist_t *copy_stat(statlist_t *chain);
 statlist_t *append_to_statlist(statlist_t **head, ipstat_t *stat, uint32_t pos);
-statlist_t *get_if_stat(statlist_t *statlist, char *dev);
+statlist_t *get_iface(statlist_t *statlist, char *dev);
 uint32_t get_ip_stat(uint32_t ip_addr, statlist_t **list);
 void free_statlist(statlist_t **list);
 
@@ -105,7 +105,7 @@ typedef struct if_list_s {
 
 if_list_t *new_empty_iflist(void);
 if_list_t *push_to_iflist(if_list_t **list, if_list_t *chain);
-uint32_t get_iface_stat(char *dev, if_list_t **list);
+uint32_t get_if_stat(char *dev, if_list_t **list);
 void free_iflist(if_list_t **iflist);
 
 
@@ -136,7 +136,7 @@ typedef struct {
     scomfunc_t func;
 } scommand_t;
 
-int create_ssocket(void);
+int open_srv_sock(void);
 void start_listen(int ssock_fd);
 int open_cli_sock(void);
 

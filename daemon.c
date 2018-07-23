@@ -1,16 +1,20 @@
 #include <sniffer.h>
 
 pthread_mutex_t mutex;
+pthread_t tid;
 
 static void term_handler(int signum)
 {
     unset_iface();
+    pthread_cancel(tid);
+    pthread_join(tid, NULL);
+    pthread_mutex_destroy(&mutex);
     free_storage();
     remove_files();
     exit(EXIT_SUCCESS);
 }
 
-void prepare_daemon(void)
+int prepare_daemon(void)
 {
     pid_t sid;
 
@@ -18,26 +22,21 @@ void prepare_daemon(void)
     signal(SIGINT, &term_handler);
     umask(S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     sid = setsid();
-    if (sid < 0) {
-        remove_files();
-        exit(EXIT_FAILURE);
-    }
-    if ((chdir("/")) < 0) {
-        remove_files();
-        exit(EXIT_FAILURE);
-    }
+    if (sid < 0)
+        return (-1);
+    if ((chdir("/")) < 0)
+        return (-1);
     close(STDIN_FILENO);
     close(STDOUT_FILENO);
     close(STDERR_FILENO);
+    return (0);
 }
 
 void start_daemon(void)
 {
     int ssock_fd;
-    pthread_t tid;
 
-    // set_iface(NULL);
-    ssock_fd = create_ssocket();
+    ssock_fd = open_srv_sock();
     if (ssock_fd < 0)
         return ;
     file_to_memory();

@@ -8,7 +8,7 @@ static statlist_t *new_stat(ipstat_t *stat, uint32_t pos)
     if (new == NULL)
         return (NULL);
     new->stat = *stat;
-    new->pos = 0;
+    new->pos = pos;
     new->next = NULL;
     return (new);
 }
@@ -52,7 +52,7 @@ statlist_t *append_to_statlist(statlist_t **head, ipstat_t *stat, uint32_t pos)
     return (new_chain);
 }
 
-statlist_t *get_if_stat(statlist_t *statlist, char *dev)
+statlist_t *get_iface(statlist_t *statlist, char *dev)
 {
     while (statlist != NULL) {
         if (!strcmp(statlist->stat.iface, dev))

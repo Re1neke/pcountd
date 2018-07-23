@@ -19,7 +19,8 @@ static void sniff_run(int argc, char *argv[])
         printf("Sniffing daemon is started with PID [%d]\n", (int)pid);
         return ;
     }
-    prepare_daemon();
+    if (prepare_daemon())
+        exit(EXIT_FAILURE);
     if (create_pidfile(getpid()))
         exit(EXIT_FAILURE);
     start_daemon();

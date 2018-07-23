@@ -77,7 +77,7 @@ static uint32_t add_iface(if_list_t **list, statlist_t *stats, char *dev)
     uint32_t count = 0;
 
     if (dev != NULL) {
-        ifstat = get_if_stat(stats, dev);
+        ifstat = get_iface(stats, dev);
         if (ifstat != NULL)
             count += push_stat_to_iflist(list, ifstat);
     }
@@ -102,7 +102,7 @@ static uint32_t collect_iface_stat(stortree_t *root, if_list_t **list, char *dev
     return (count);   
 }
 
-uint32_t get_iface_stat(char *dev, if_list_t **list)
+uint32_t get_if_stat(char *dev, if_list_t **list)
 {
     extern stortree_t *storage;
 
