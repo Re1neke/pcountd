@@ -74,9 +74,10 @@ uint32_t get_ip_stat(uint32_t ip_addr, statlist_t **list)
     chain = ip_node->stats;
     while (chain != NULL) {
         copy = copy_stat(chain);
-        if (copy != NULL)
+        if (copy != NULL) {
             push_to_statlist(list, copy);
-        count++;
+            count++;
+        }
         chain = chain->next;
     }
     return (count);

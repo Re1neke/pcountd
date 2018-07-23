@@ -25,6 +25,8 @@
 # include <net/if.h>
 # include <arpa/inet.h>
 
+# include <pthread.h>
+
 # define RUN_DIR "/var/run/pcountd"
 # define PID_FILE RUN_DIR "/pcountd.pid"
 # define SOCK_FILE RUN_DIR "/pcountd.sock"
@@ -46,17 +48,20 @@ void remove_files(void);
 pid_t read_pidfile(void);
 int create_pidfile(pid_t pid);
 void prepare_daemon(void);
+void start_daemon(void);
 
 
 typedef struct {
     pcap_t *pcap_handler;
     char dev_name[IFNAMSIZ + 1];
+    bool sniff;
 } iface_t;
 
 
-void sniff_iface(void);
-int change_iface(char *dev);
-int set_iface(char *dev);
+void *sniff_iface(void *arg);
+int select_iface(char *dev);
+int set_iface(void);
+int unset_iface(void);
 
 
 typedef struct {

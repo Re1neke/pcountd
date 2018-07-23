@@ -1,6 +1,6 @@
 CC=gcc
 CFLAGS=-Wall -Werror -Wconversion
-LIBFLAGS=-lpcap
+LIBFLAGS=-lpcap -lpthread
 
 NAME=pcountd
 INC=sniffer.h

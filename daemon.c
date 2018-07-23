@@ -1,13 +1,10 @@
 #include <sniffer.h>
 
+pthread_mutex_t mutex;
+
 static void term_handler(int signum)
 {
-    extern iface_t cur_iface;
-
-    if (cur_iface.pcap_handler != NULL) {
-        pcap_breakloop(cur_iface.pcap_handler);
-        pcap_close(cur_iface.pcap_handler);
-    }
+    unset_iface();
     free_storage();
     remove_files();
     exit(EXIT_SUCCESS);
@@ -32,6 +29,25 @@ void prepare_daemon(void)
     close(STDIN_FILENO);
     close(STDOUT_FILENO);
     close(STDERR_FILENO);
+}
+
+void start_daemon(void)
+{
+    int ssock_fd;
+    pthread_t tid;
+
+    // set_iface(NULL);
+    ssock_fd = create_ssocket();
+    if (ssock_fd < 0)
+        return ;
+    file_to_memory();
+    if (pthread_mutex_init(&mutex, NULL))
+        return ;
+    if (pthread_create(&tid, NULL, &sniff_iface, NULL))
+        return ;
+    start_listen(ssock_fd);
+    pthread_join(tid, NULL);
+    pthread_mutex_destroy(&mutex);
 }
 
 void remove_files(void)

@@ -1,5 +1,7 @@
 #include <sniffer.h>
 
+extern pthread_mutex_t mutex;
+
 int create_ssocket(void)
 {
     int ssock_fd;
@@ -16,6 +18,30 @@ int create_ssocket(void)
     return (ssock_fd);
 }
 
+static void sniff_start(int csock_fd, uint8_t com_id)
+{
+    int8_t status;
+    extern iface_t cur_iface;
+
+    if (cur_iface.sniff)
+        status = 1;
+    else
+        status = (int8_t)set_iface();
+    send(csock_fd, (void *)&status, sizeof(int8_t), 0);
+}
+
+static void sniff_stop(int csock_fd, uint8_t com_id)
+{
+    int8_t status;
+    extern iface_t cur_iface;
+
+    if (!cur_iface.sniff)
+        status = 1;
+    else
+        status = (int8_t)unset_iface();
+    send(csock_fd, (void *)&status, sizeof(int8_t), 0);
+}
+
 static void sniff_select(int csock_fd, uint8_t com_id)
 {
     uint8_t buf[IFNAMSIZ + 1];
@@ -23,7 +49,7 @@ static void sniff_select(int csock_fd, uint8_t com_id)
 
     memset(buf, 0, IFNAMSIZ + 1);
     recv(csock_fd, (void *)buf, IFNAMSIZ, 0);
-    change = (int8_t)change_iface((char *)buf);
+    change = (int8_t)select_iface((char *)buf);
     send(csock_fd, (void *)&change, sizeof(int8_t), 0);
 }
 
@@ -33,7 +59,9 @@ static void sniff_show(int csock_fd, uint8_t com_id)
     uint32_t ip, count;
 
     recv(csock_fd, (void *)&ip, sizeof(uint32_t), 0);
+    pthread_mutex_lock(&mutex);
     count = get_ip_stat(ip, &ip_list);
+    pthread_mutex_unlock(&mutex);
     send(csock_fd, (void *)&count, sizeof(uint32_t), 0);
     cur_chain = ip_list;
     while (cur_chain != NULL) {
@@ -53,7 +81,9 @@ static void sniff_stat(int csock_fd, uint8_t com_id)
     memset(buf, 0, IFNAMSIZ + 1);
     if (com_id == STAT)
         recv(csock_fd, (void *)buf, IFNAMSIZ, 0);
+    pthread_mutex_lock(&mutex);
     count_if = get_iface_stat((com_id == STAT) ? (char *)buf : NULL, &if_list);
+    pthread_mutex_unlock(&mutex);
     send(csock_fd, (void *)&count_if, sizeof(uint32_t), 0);
     cur_if = if_list;
     while (cur_if != NULL) {
@@ -71,6 +101,8 @@ static void sniff_stat(int csock_fd, uint8_t com_id)
 static void handle_request(int csock_fd, uint8_t com_id)
 {
     const scommand_t command[] = {
+        {START, &sniff_start},
+        {STOP, &sniff_stop},
         {SHOW_CNT, &sniff_show},
         {SELECT, &sniff_select},
         {STAT, &sniff_stat},

@@ -5,7 +5,6 @@ extern bool is_cli;
 static void sniff_run(int argc, char *argv[])
 {
     pid_t pid;
-    int ssock_fd;
 
     if (read_pidfile() > 0) {
         fprintf(stderr, "The daemon is already running. Error.\n");
@@ -23,14 +22,7 @@ static void sniff_run(int argc, char *argv[])
     prepare_daemon();
     if (create_pidfile(getpid()))
         exit(EXIT_FAILURE);
-    set_iface(NULL);
-    ssock_fd = create_ssocket();
-    if (ssock_fd < 0) {
-        remove_files();
-        exit(EXIT_FAILURE);
-    }
-    file_to_memory();
-    start_listen(ssock_fd);
+    start_daemon();
     remove_files();
     exit(EXIT_FAILURE);
 }
@@ -52,12 +44,42 @@ static void sniff_halt(int argc, char *argv[])
 
 static void sniff_start(int argc, char *argv[])
 {
+    int sock;
+    const uint8_t com_id = (uint8_t)START;
+    int8_t status;
 
+    sock = open_cli_sock();
+    if (sock < 0) {
+        fprintf(stderr, "Can not connect to daemon. Error.\n");
+        return ;      
+    }
+    send(sock, (void *)&com_id, sizeof(uint8_t), 0);
+    recv(sock, (void *)&status, sizeof(int8_t), 0);
+    if (status == 1)
+        printf("Daemon is already sniffing.\n");
+    else if (status == 0)
+        printf("Daemon starts sniffing.\n");
+    close(sock);
 }
 
 static void sniff_stop(int argc, char *argv[])
 {
+    int sock;
+    const uint8_t com_id = (uint8_t)STOP;
+    int8_t status;
 
+    sock = open_cli_sock();
+    if (sock < 0) {
+        fprintf(stderr, "Can not connect to daemon. Error.\n");
+        return ;      
+    }
+    send(sock, (void *)&com_id, sizeof(uint8_t), 0);
+    recv(sock, (void *)&status, sizeof(int8_t), 0);
+    if (status == 1)
+        printf("Daemon is already stoped.\n");
+    else if (status == 0)
+        printf("Daemon stoped sniffing.\n");
+    close(sock);
 }
 
 static void sniff_show(int argc, char *argv[])
@@ -92,6 +114,7 @@ static void sniff_show(int argc, char *argv[])
     }
     print_ipcount(ip_list);
     free_statlist(&ip_list);
+    close(sock);
 }
 
 static void sniff_select(int argc, char *argv[])
@@ -116,6 +139,7 @@ static void sniff_select(int argc, char *argv[])
         printf("Device successfuly changed. Restart sniffer for start sniffing.\n");
     else if (change == 1)
         fprintf(stderr, "Wrong device name.\n");
+    close(sock);
 }
 
 static void sniff_stat(int argc, char *argv[])
@@ -153,6 +177,7 @@ static void sniff_stat(int argc, char *argv[])
     }
     print_ifacestat(list);
     free_iflist(&list);
+    close(sock);
 }
 
 static void sniff_exit(int argc, char *argv[])
@@ -169,9 +194,9 @@ static void sniff_help(int argc, char *argv[])
     printf("\thalt   - kill the daemon process\n");
     printf("\tstart  - packets are being sniffed from now on from default iface\n");
     printf("\tstop   - packets are not sniffed\n");
-    printf("\t#show [ip] count       - print number of packets received from ip address\n");
-        printf("\t#select iface [iface]  - select interface for sniffing\n");
-    printf("\t#stat [iface]  - show all collected statistics for particular interface,\n");
+    printf("\tshow [ip] count       - print number of packets received from ip address\n");
+        printf("\tselect iface [iface]  - select interface for sniffing\n");
+    printf("\tstat [iface]  - show all collected statistics for particular interface,\n");
     printf("\t                if ifaceomitted - for all interfaces.\n");
     if (is_cli == true)
         printf("\texit          - exit from cli\n");
